@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA 檢查工具</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .check-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .check-item.success {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+        }
+        .check-item.error {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+        }
+        .check-item.warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+        .icon {
+            font-size: 24px;
+            min-width: 30px;
+        }
+        .info {
+            flex: 1;
+        }
+        .info-title {
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .info-detail {
+            font-size: 14px;
+            color: #666;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+        code {
+            background: #1f2937;
+            color: #10b981;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 PWA 系統檢查工具</h1>
+        <p class="subtitle">8噸油爐智能管理系統 - 安裝檢查</p>
+
+        <div id="results"></div>
+
+        <div class="section">
+            <div class="section-title">📱 快速連結</div>
+            <button onclick="window.open('./boiler-dashboard-simple.html', '_blank')">
+                開啟儀表板
+            </button>
+            <button onclick="window.open('./qr-mobile-multilang.html', '_blank')">
+                開啟 QR 輸入頁面
+            </button>
+            <button onclick="checkAll()">
+                🔄 重新檢查
+            </button>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📚 安裝步驟</div>
+            <ol style="line-height: 1.8;">
+                <li>確保所有檔案都上傳到同一個目錄</li>
+                <li>確認網站使用 <code>https://</code> (必要)</li>
+                <li>用手機瀏覽器開啟儀表板</li>
+                <li>點擊「安裝 APP」或「加入主畫面」</li>
+                <li>完成！</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <div class="section-title">⚙️ 需要的檔案</div>
+            <ul style="line-height: 1.8;">
+                <li><code>boiler-dashboard-simple.html</code> - 主儀表板</li>
+                <li><code>qr-mobile-multilang.html</code> - QR 輸入頁面</li>
+                <li><code>manifest.json</code> - PWA 設定檔</li>
+                <li><code>service-worker.js</code> - 離線功能</li>
+                <li><code>icon-192.png</code> - APP 小圖示</li>
+                <li><code>icon-512.png</code> - APP 大圖示</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        async function checkFile(filename) {
+            try {
+                const response = await fetch(filename, { method: 'HEAD' });
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function checkAll() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p style="text-align:center;color:#666;">檢查中...</p>';
+
+            const checks = [
+                { file: 'manifest.json', name: 'PWA 設定檔' },
+                { file: 'service-worker.js', name: 'Service Worker' },
+                { file: 'icon-192.png', name: 'APP 圖示 192x192' },
+                { file: 'icon-512.png', name: 'APP 圖示 512x512' },
+                { file: 'boiler-dashboard-simple.html', name: '儀表板頁面' },
+                { file: 'qr-mobile-multilang.html', name: 'QR 輸入頁面' }
+            ];
+
+            const resultsHTML = [];
+            let allSuccess = true;
+
+            for (const check of checks) {
+                const exists = await checkFile(check.file);
+                if (exists) {
+                    resultsHTML.push(`
+                        <div class="check-item success">
+                            <div class="icon">✅</div>
+                            <div class="info">
+                                <div class="info-title">${check.name}</div>
+                                <div class="info-detail">${check.file} - 檔案存在</div>
+                            </div>
+                        </div>
+                    `);
+                } else {
+                    allSuccess = false;
+                    resultsHTML.push(`
+                        <div class="check-item error">
+                            <div class="icon">❌</div>
+                            <div class="info">
+                                <div class="info-title">${check.name}</div>
+                                <div class="info-detail">${check.file} - 找不到檔案</div>
+                            </div>
+                        </div>
+                    `);
+                }
+            }
+
+            // 檢查 HTTPS
+            const isHttps = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+            if (isHttps) {
+                resultsHTML.push(`
+                    <div class="check-item success">
+                        <div class="icon">🔒</div>
+                        <div class="info">
+                            <div class="info-title">安全連線 (HTTPS)</div>
+                            <div class="info-detail">PWA 可正常運作</div>
+                        </div>
+                    </div>
+                `);
+            } else {
+                allSuccess = false;
+                resultsHTML.push(`
+                    <div class="check-item error">
+                        <div class="icon">⚠️</div>
+                        <div class="info">
+                            <div class="info-title">未使用 HTTPS</div>
+                            <div class="info-detail">PWA 需要 HTTPS 才能運作 (localhost 除外)</div>
+                        </div>
+                    </div>
+                `);
+            }
+
+            // 檢查 Service Worker 支援
+            if ('serviceWorker' in navigator) {
+                resultsHTML.push(`
+                    <div class="check-item success">
+                        <div class="icon">⚙️</div>
+                        <div class="info">
+                            <div class="info-title">瀏覽器支援</div>
+                            <div class="info-detail">您的瀏覽器支援 Service Worker</div>
+                        </div>
+                    </div>
+                `);
+            } else {
+                resultsHTML.push(`
+                    <div class="check-item warning">
+                        <div class="icon">⚠️</div>
+                        <div class="info">
+                            <div class="info-title">瀏覽器不支援</div>
+                            <div class="info-detail">請使用 Chrome、Edge 或 Safari</div>
+                        </div>
+                    </div>
+                `);
+            }
+
+            // 總結
+            if (allSuccess) {
+                resultsHTML.unshift(`
+                    <div class="check-item success" style="font-size: 18px;">
+                        <div class="icon">🎉</div>
+                        <div class="info">
+                            <div class="info-title">所有檢查通過！</div>
+                            <div class="info-detail">您的 PWA 已準備就緒，可以開始使用了</div>
+                        </div>
+                    </div>
+                `);
+            } else {
+                resultsHTML.unshift(`
+                    <div class="check-item error" style="font-size: 18px;">
+                        <div class="icon">❌</div>
+                        <div class="info">
+                            <div class="info-title">發現問題</div>
+                            <div class="info-detail">請修正上述問題後再試</div>
+                        </div>
+                    </div>
+                `);
+            }
+
+            results.innerHTML = resultsHTML.join('');
+        }
+
+        // 頁面載入時自動檢查
+        checkAll();
+    </script>
+</body>
+</html>

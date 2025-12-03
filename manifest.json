@@ -1,0 +1,33 @@
+{
+  "name": "8噸油爐智能管理系統",
+  "short_name": "油爐管理",
+  "description": "Boiler Management System - Hệ thống quản lý lò dầu - ระบบจัดการเตาน้ำมัน",
+  "start_url": "/boiler/",
+  "display": "standalone",
+  "background_color": "#0c1821",
+  "theme_color": "#0a4d68",
+  "orientation": "portrait",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business"],
+  "screenshots": [
+    {
+      "src": "screenshot.png",
+      "sizes": "1280x720",
+      "type": "image/png"
+    }
+  ]
+}
