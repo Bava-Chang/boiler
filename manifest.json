@@ -2,7 +2,7 @@
   "name": "8噸油爐智能管理系統",
   "short_name": "油爐管理",
   "description": "Boiler Management System - Hệ thống quản lý lò dầu - ระบบจัดการเตาน้ำมัน",
-  "start_url": "./boiler-dashboard-simple.html",
+  "start_url": "/boiler/",
   "display": "standalone",
   "background_color": "#0c1821",
   "theme_color": "#0a4d68",

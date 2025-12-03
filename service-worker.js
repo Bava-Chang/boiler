@@ -1,9 +1,10 @@
 // Service Worker for Boiler Management System PWA
-const CACHE_NAME = 'boiler-management-v1.0.0';
+const CACHE_NAME = 'boiler-management-v1.0.1';
 const urlsToCache = [
-  './boiler-dashboard-simple.html',
-  './qr-mobile-multilang.html',
-  './manifest.json',
+  '/boiler/',
+  '/boiler/index.html',
+  '/boiler/qr-mobile-multilang.html',
+  '/boiler/manifest.json',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
   'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Noto+Sans+Thai:wght@300;400;500;700;900&family=Noto+Sans:wght@300;400;500;700;900&family=Orbitron:wght@400;700;900&display=swap'
 ];
