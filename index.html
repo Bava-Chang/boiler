@@ -554,34 +554,8 @@
                             <th id="th7">狀態</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>2024-12-03 08:00</td>
-                            <td>張三</td>
-                            <td>4800</td>
-                            <td>4523</td>
-                            <td>8550</td>
-                            <td><strong>30.86</strong></td>
-                            <td><span class="badge badge-success">正常</span></td>
-                        </tr>
-                        <tr>
-                            <td>2024-12-02 08:00</td>
-                            <td>Nguyễn Văn A</td>
-                            <td>5100</td>
-                            <td>4800</td>
-                            <td>9000</td>
-                            <td><strong>30.0</strong></td>
-                            <td><span class="badge badge-success">正常</span></td>
-                        </tr>
-                        <tr>
-                            <td>2024-12-01 08:00</td>
-                            <td>สมชาย มาลัย</td>
-                            <td>5400</td>
-                            <td>5100</td>
-                            <td>8700</td>
-                            <td><strong>29.0</strong></td>
-                            <td><span class="badge badge-success">正常</span></td>
-                        </tr>
+                    <tbody id="recordsTbody">
+                        <tr><td colspan="7" style="text-align:center; color: var(--text-secondary); padding: 30px;">載入中...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -589,8 +563,11 @@
     </div>
 
     <script>
-        // Google Apps Script URL
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvkGqez5F6uJURf0THfj-Su__2OWqmFkn3o0Xn3LKjr8mdW9nIJN8ZTmjfInZ-Q-dEBw/exec';
+        // ============================================================
+        // ⚠️ 重要:把下面的網址換成你部署 Apps Script 後拿到的「網頁應用程式 URL」
+        //    必須跟 qr-mobile-multilang.html 用同一個網址!
+        // ============================================================
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/請換成你的部署ID/exec';
 
         // 員工資料庫
         const EMPLOYEE_DATABASE = {
@@ -788,6 +765,15 @@
                 document.getElementById('mainDashboard').classList.remove('hidden');
                 
                 initChart();
+                loadDashboardData();   // 載入即時儀表板數據
+                loadLatestRecords();   // 載入最近運行記錄
+                
+                // 每 60 秒自動更新一次
+                if (window.__refreshTimer) clearInterval(window.__refreshTimer);
+                window.__refreshTimer = setInterval(() => {
+                    loadDashboardData();
+                    loadLatestRecords();
+                }, 60000);
             } else {
                 document.getElementById('loginError').classList.add('show');
             }
@@ -802,6 +788,76 @@
             document.getElementById('employeeId').value = '';
             document.getElementById('loginError').classList.remove('show');
             updateLanguage();
+        }
+
+
+        // ========== 從 Google Sheets 即時載入資料 ==========
+        async function loadDashboardData() {
+            if (GOOGLE_SCRIPT_URL.includes('請換成')) {
+                console.warn('⚠️ 尚未設定 GOOGLE_SCRIPT_URL,請打開 index.html 換成你的 Apps Script 部署網址');
+                return;
+            }
+            try {
+                const res = await fetch(GOOGLE_SCRIPT_URL + '?action=getDashboardData');
+                const json = await res.json();
+                if (!json.success) throw new Error(json.message);
+                const d = json.data || {};
+                
+                document.getElementById('statCurrentOil').textContent = (d.currentOil ?? 0).toLocaleString();
+                document.getElementById('statTodayOilDelta').textContent = '↓ ' + (d.todayOil ?? 0) + 'L';
+                document.getElementById('statWaterUsage').textContent = (d.waterUsage ?? 0).toLocaleString();
+                document.getElementById('statWaterFuelRatio').textContent = (d.avgWaterFuelRatio ?? 0).toFixed(1);
+                document.getElementById('statRuntime').textContent = (d.runtime ?? 0).toFixed(1);
+                document.getElementById('statEfficiency').textContent = (d.efficiency ?? 0).toFixed(1);
+                document.getElementById('statEfficiencyDelta').textContent = '✓ 即時';
+                
+                console.log('✅ 儀表板資料已更新', d);
+            } catch (err) {
+                console.error('❌ 載入儀表板失敗:', err);
+            }
+        }
+        
+        async function loadLatestRecords() {
+            if (GOOGLE_SCRIPT_URL.includes('請換成')) return;
+            try {
+                const res = await fetch(GOOGLE_SCRIPT_URL + '?action=getLatestRecords&type=operation&limit=10');
+                const json = await res.json();
+                if (!json.success) throw new Error(json.message);
+                
+                const records = json.data || [];
+                const tbody = document.getElementById('recordsTbody');
+                
+                if (records.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-secondary); padding: 30px;">尚無資料</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = records.map(r => {
+                    const ts = r['時間戳記'] ? new Date(r['時間戳記']) : null;
+                    const tsStr = ts ? (ts.getFullYear() + '-' +
+                        String(ts.getMonth()+1).padStart(2,'0') + '-' +
+                        String(ts.getDate()).padStart(2,'0') + ' ' +
+                        String(ts.getHours()).padStart(2,'0') + ':' +
+                        String(ts.getMinutes()).padStart(2,'0')) : '';
+                    const status = r['狀態'] || '';
+                    const badgeClass = status === '正常' ? 'badge-success' : 'badge-success';
+                    return `<tr>
+                        <td>${tsStr}</td>
+                        <td>${r['操作員'] || ''}</td>
+                        <td>${r['油量起(L)'] ?? ''}</td>
+                        <td>${r['油量訖(L)'] ?? ''}</td>
+                        <td>${r['用水量(L)'] ?? ''}</td>
+                        <td><strong>${r['水煤比'] ?? ''}</strong></td>
+                        <td><span class="badge ${badgeClass}">${status}</span></td>
+                    </tr>`;
+                }).join('');
+                
+                console.log('✅ 載入 ' + records.length + ' 筆運行記錄');
+            } catch (err) {
+                console.error('❌ 載入記錄失敗:', err);
+                document.getElementById('recordsTbody').innerHTML = 
+                    '<tr><td colspan="7" style="text-align:center; color: var(--danger); padding: 30px;">載入失敗:' + err.message + '</td></tr>';
+            }
         }
 
         // 初始化圖表
