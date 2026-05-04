@@ -475,8 +475,12 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        // 配置
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvkGqez5F6uJURf0THfj-Su__2OWqmFkn3o0Xn3LKjr8mdW9nIJN8ZTmjfInZ-Q-dEBw/exec';
+        // ============================================================
+        // ⚠️ 重要:把下面的網址換成你部署 Apps Script 後拿到的「網頁應用程式 URL」
+        //    格式類似: https://script.google.com/macros/s/AKfycbxxxxxxxx/exec
+        //    部署完成後可在瀏覽器打開「URL?action=ping」測試是否成功
+        // ============================================================
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/請換成你的部署ID/exec';
 
         // 員工資料庫
         const EMPLOYEE_DATABASE = {
@@ -1011,10 +1015,10 @@
                 }
 
                 try {
-                    await fetch(GOOGLE_SCRIPT_URL, {
+                    // 注意:不設 Content-Type header,讓瀏覽器以 text/plain 送出
+                    // 這樣可避免 CORS preflight,Apps Script 仍能用 e.postData.contents 取得 JSON 字串
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             type: this.currentType,
                             data: {
@@ -1026,18 +1030,28 @@
                         })
                     });
 
-                    this.showToast(this.t('submitSuccess'), 'success');
-                    
-                    setTimeout(() => {
-                        form.reset();
-                        this.formData = {};
-                        const display = document.getElementById('waterFuelDisplay');
-                        if (display) display.style.display = 'none';
-                    }, 1500);
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.showToast(this.t('submitSuccess'), 'success');
+                        setTimeout(() => {
+                            form.reset();
+                            this.formData = {};
+                            const display = document.getElementById('waterFuelDisplay');
+                            if (display) display.style.display = 'none';
+                        }, 1500);
+                    } else {
+                        console.error('後端錯誤:', result.message);
+                        this.showToast('❌ ' + (result.message || this.t('submitError')), 'error');
+                    }
 
                 } catch (error) {
                     console.error('提交失敗:', error);
-                    this.showToast(this.t('submitError'), 'error');
+                    this.showToast(this.t('submitError') + ' (' + error.message + ')', 'error');
                 } finally {
                     submitBtn.classList.remove('loading');
                     submitBtn.disabled = false;
